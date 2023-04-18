@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <link rel="shortcut icon" href="#">
+    <title>Family tree viewer</title>
+    <script src="scripts/d3.min.js"></script>
+    <script src="scripts/family-chart.min.js"></script>
+    <script src="scripts/show-tree.js"></script>
+    <script src="scripts/parse-gedcom.js"></script>
+    <link rel="stylesheet" href="styles/family-chart.css">
+    <link rel="stylesheet" href="styles/gedcom.css">
+</head>
+<body>
+    <div class="file-load">
+        <input type="file" id="file-input"/>
+        <pre id="file-load"></pre>
+        <script src="scripts/load-file.js"></script>
+    </div>
+    <div id="FamilyChart" class="f3"></div>
+</body>
+</html>
