@@ -7,7 +7,7 @@ function readSingleFile(e) {
     reader.onload = function(e) {
         var content = e.target.result;
         var data = parse(content);
-        store();
+        store(data);
         //file-load
         var element = document.getElementById('file-load');
         element.textContent = 'File loaded';

@@ -53,9 +53,9 @@ function data() {
 ]
 };
 
-function store(){
+function store(data){
     const store = f3.createStore({
-        data: data(),
+        data: data,
         node_separation: 250,
         level_separation: 150
         }),
