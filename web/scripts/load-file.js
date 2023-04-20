@@ -6,7 +6,7 @@ function readSingleFile(e) {
     var reader = new FileReader();
     reader.onload = function(e) {
         var content = e.target.result;
-        var data = parse(content);
+        var data = parseGedcom(content);
         store(data);
         //file-load
         var element = document.getElementById('file-load');
