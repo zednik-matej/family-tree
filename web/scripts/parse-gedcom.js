@@ -5,7 +5,7 @@ function GetPersonIndex (personArray = Array(), Tag){
 }
 
 function setFather(Father,Mother,Children=Array()){
-    if(Father == undefined)return;
+    if(Father == undefined||Father["rels"]==undefined)return;
     var personrels = Father["rels"];
     var personspouses = personrels["spouses"];
     if(personspouses==undefined)personspouses=Array();
@@ -21,7 +21,7 @@ function setFather(Father,Mother,Children=Array()){
 }
 
 function setMother(Mother,Father,Children=Array()){
-    if(Mother == undefined)return;
+    if(Mother == undefined||Mother["rels"]==undefined)return;
     var personrels = Mother["rels"];
     var personspouses = personrels["spouses"];
     if(personspouses==undefined)personspouses=Array();
@@ -39,8 +39,8 @@ function setMother(Mother,Father,Children=Array()){
 function setChildren(Children=Array(),Mother,Father){
     for(i=0;i<Children.length;i++){
         var personrels = Children[i]["rels"];
-        if(Mother!=undefined)personrels["mother"] = Mother["id"];
-        if(Father!=undefined)personrels["father"] = Father["id"];
+        if(Mother!=undefined||Mother["rels"]==undefined)personrels["mother"] = Mother["id"];
+        if(Father!=undefined||Father["rels"]==undefined)personrels["father"] = Father["id"];
         Children[i]["rels"] = personrels;
     }
 }
@@ -68,20 +68,10 @@ function parseFamily(section, persons = Array()){
         }
     }
     if(mother==undefined){
-        mother={
-            "id" : self.crypto.randomUUID(),
-            "data" :{},
-            "rels" :{}
-        };
-        persons.push(mother);
+        mother={};
     }
     if(father==undefined){
-        father={
-            "id" : self.crypto.randomUUID(),
-            "data" :{},
-            "rels" :{}
-        };
-        persons.push(father);
+        father={};
     }
     setFather(father,mother,chils);
     setMother(mother,father,chils);

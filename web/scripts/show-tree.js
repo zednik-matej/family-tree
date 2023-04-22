@@ -1,8 +1,11 @@
 function store(data){
+    var test = JSON.stringify(data);
     const store = f3.createStore({
         data: data,
+        is_vertical :true,
         node_separation: 250,
-        level_separation: 150
+        spouse_separation: 80,
+        level_separation: 160
         }),
         view = f3.d3AnimationView({
         store,
@@ -16,7 +19,6 @@ function store(data){
         mini_tree: true,
         link_break: true
         })
-        f3.
     view.setCard(Card)
     store.setOnUpdate(props => view.update(props || {}))
     store.update.tree({initial: true});

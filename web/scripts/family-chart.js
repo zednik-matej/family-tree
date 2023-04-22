@@ -1,4 +1,7 @@
 // https://donatso.github.io/family-chart/ v0.0.0-beta-1 Copyright 2021 Donat Soric
+
+var lev_sep = 0;
+var sp_sep = 0;
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('d3')) :
     typeof define === 'function' && define.amd ? define(['d3'], factory) :
@@ -47,7 +50,8 @@
     }
     
     function otherParent(d, p1, data) {
-      return data.find(d0 => (d0.id !== p1.id) && ((d0.id === d.rels.mother) || (d0.id === d.rels.father)))
+      /*if (p1.gender==="F") return data.find(d0 => (d0.id === p1.id));
+      else*/ return data.find(d0 => (d0.id !== p1.id) && ((d0.id === d.rels.mother) || (d0.id === d.rels.father)));
     }
     
     function calculateEnterAndExitPositions(d, entering, exiting) {
@@ -302,7 +306,9 @@
       handleRelsOfNewDatum({datum, data_stash, rel_type, rel_datum});
     }
     
-    function CalculateTree({data_stash, main_id=null, is_vertical=true, node_separation=250, level_separation=150}) {
+    function CalculateTree({data_stash, main_id=null, is_vertical=true, node_separation=250, spouse_separation=50, level_separation=150}) {
+      lev_sep = level_separation;
+      sp_sep = spouse_separation;
       data_stash = createRelsToAdd(data_stash);
       sortChildrenWithSpouses(data_stash);
       const main = main_id !== null ? data_stash.find(d => d.id === main_id) : data_stash[0],
@@ -313,7 +319,7 @@
       levelOutEachSide(tree_parents, tree_children);
       const tree = mergeSides(tree_parents, tree_children);
       setupChildrenAndParents({tree});
-      setupSpouses({tree, node_separation});
+      setupSpouses({tree, spouse_separation});
       nodePositioning({tree, is_vertical});
     
       const dim = calculateTreeDim(tree, node_separation, level_separation, is_vertical);
@@ -346,7 +352,8 @@
         }
     
         function hierarchyGetterParents(d) {
-          return [d.rels.father, d.rels.mother]
+          /*You can change position of mother and father*/ 
+          return [ d.rels.father, d.rels.mother]
             .filter(d => d).map(id => data_stash.find(d => d.id === id))
         }
     
@@ -376,38 +383,50 @@
         });
       }
     
-      function setupSpouses({tree, node_separation}) {
+      function setupSpouses({tree, spouse_separation}) {
         for (let i = tree.length; i--;) {
           const d = tree[i];
           if (!d.is_ancestry && d.data.rels.spouses && d.data.rels.spouses.length > 0){
-            const side = d.data.data.gender === "M" ? -1 : 1;  // female on right
-            d.x += d.data.rels.spouses.length/2*node_separation*side;
+            const side = -1;
             d.data.rels.spouses.forEach((sp_id, i) => {
-              const spouse = {data: data_stash.find(d0 => d0.id === sp_id), added: true};
-    
-              spouse.x = d.x-(node_separation*(i+1))*side;
-              spouse.y = d.y;
-              spouse.sx = i > 0 ? spouse.x : spouse.x + (node_separation/2)*side;
-              spouse.depth = d.depth;
-              spouse.spouse = d;
-              if (!d.spouses) d.spouses = [];
-              d.spouses.push(spouse);
-              tree.push(spouse);
-    
-              tree.forEach(d0 => (
-                (d0.data.rels.father === d.data.id && d0.data.rels.mother === spouse.data.id) ||
-                (d0.data.rels.mother === d.data.id && d0.data.rels.father === spouse.data.id)
-                ) ? d0.psx = spouse.sx : null
-              );
+              if(sp_id!=undefined){
+                const spouse = {data: data_stash.find(d0 => d0.id === sp_id), added: true};
+                spouse.x = d.x-((spouse_separation*3)*(i));
+                spouse.y = d.y-(spouse_separation)*side;
+                spouse.sx = d.x;
+                spouse.depth = d.depth;
+                spouse.spouse = d;
+                if (!d.spouses) d.spouses = [];
+                d.spouses.push(spouse);
+                tree.push(spouse);             
+                  tree.forEach(d0 => (
+                    (d0.data.rels.father === d.data.id && d0.data.rels.mother === spouse.data.id) ||
+                    (d0.data.rels.mother === d.data.id && d0.data.rels.father === spouse.data.id)
+                    ) ? d0.psx = d.x : null
+                  );
+              }
+              else {               
+                tree.forEach(d0 => {
+                  if(d0.data==undefined)
+                  {
+                    return;
+                  }
+                  if ((d0.data.rels.father === d.data.id && d0.data.rels.mother === undefined) ||
+                  (d0.data.rels.mother === d.data.id && d0.data.rels.father === undefined))
+                   d0.psx = d.x;}
+                );
+              }
             });
           }
+          /*TO DO this*/
           if (d.parents && d.parents.length === 2) {
             const p1 = d.parents[0],
               p2 = d.parents[1],
-              midd = p1.x - (p1.x - p2.x)/2,
-              x = (d,sp) => midd + (node_separation/2)*(d.x < sp.x ? 1 : -1);
+              midd = p1.y - (p1.y - p2.y)/2,
+              y = (d,sp) => midd + (spouse_separation/2)*(d.y < sp.y ? 1 : -1);
     
-            p2.x = x(p1, p2); p1.x = x(p2, p1);
+            p2.y = y(p1, p2); p1.y = y(p2, p1);
+            p2.x = p1.x;
           }
         }
       }
@@ -451,12 +470,12 @@
               const child = data.find(d1 => d1.id === d0);
               if (child.rels[is_father ? 'father' : 'mother'] !== d.id) return
               if (child.rels[!is_father ? 'father' : 'mother']) return
-              if (!spouse) {
-                spouse = createToAddSpouse(d);
-                d.rels.spouses.push(spouse.id);
-              }
+              if (spouse) {
+                //spouse = createToAddSpouse(d);
+                //d.rels.spouses.push(spouse.id);
+              
               spouse.rels.children.push(child.id);
-              child.rels[!is_father ? 'father' : 'mother'] = spouse.id;
+              child.rels[!is_father ? 'father' : 'mother'] = spouse.id;}
             });
           }
         }
@@ -550,9 +569,15 @@
     
       function handleAncestrySide({d}) {
         if (!d.parents || d.parents.length === 0) return
+        if(d.parents[1]==undefined){
+          d.parents[1]=d.parents[0];
+        }
+        if(d.parents[0]==undefined){
+          d.parents[0]=d.parents[1];
+        }
         const p1 = d.parents[0], p2 = d.parents[1];
-    
-        const p = {x: getMid(p1, p2, 'x'), y: getMid(p1, p2, 'y')};
+        
+        const p = {x: getMid(p1, p2, 'x'), y: p2.y};
     
         links.push({
           d: Link(d, p),
@@ -570,12 +595,20 @@
         if (!d.children || d.children.length === 0) return
     
         d.children.forEach((child, i) => {
-          const other_parent = otherParent(child, d, tree),
-            sx = other_parent.sx;
-    
+          var other_parent = otherParent(child, d, tree);
+          if(other_parent==undefined)other_parent=d;
+          var sx = other_parent.x;
+          var sy;
+          if(other_parent.y<d.y){          
+            sy = d.y;
+          }
+          else {
+            sy = other_parent.y;
+          }
+          
           links.push({
-            d: Link(child, {x: sx, y: d.y}),
-            _d: () => Link({x: sx, y: d.y}, {x: _or(child, 'x'), y: _or(child, 'y')}),
+            d: Link(child, {x: sx, y: sy}),
+            _d: () => Link({x: sx, y: sy}, {x: _or(child, 'x'), y: _or(child, 'y')}),
             curve: true, id: linkId(child, d, other_parent), depth: d.depth+1
           });
         });
@@ -600,7 +633,7 @@
       ///
       function getMid(d1, d2, side, is_) {
         if (is_) return _or(d1, side) - (_or(d1, side) - _or(d2, side))/2
-        else return d1[side] - (d1[side] - d2[side])/2
+        else return d1[side]
       }
     
       function _or(d, k) {
@@ -623,6 +656,11 @@
         return args.map(d => d.data.id).sort().join(", ")  // make unique id
       }
     
+      function otherParentFemale(d) {
+        d.sx=d.x;
+        return d;
+      }
+
       function otherParent(d, p1, data) {
         return data.find(d0 => (d0.data.id !== p1.data.id) && ((d0.data.id === d.data.rels.mother) || (d0.data.id === d.data.rels.father)))
       }
@@ -763,11 +801,14 @@
         closed = d.data.hide_rels,
         areParents = r => r.father || r.mother,
         areChildren = r => r.children && r.children.length > 0;
-      if ((d.is_ancestry || d.data.main) && (areParents(r) || areParents(_r))) {g+=LinkBreakIcon({x:card_dim.w/2,y:0, rt: -45, closed}).template;}
+        if (d.sx===undefined) d.sx = d.x; 
+      if ((d.is_ancestry || d.data.main) && (areParents(r) || areParents(_r))) 
+      {g+=LinkBreakIcon({x:card_dim.w/2,y:0, rt: -45, closed}).template;}
       if (!d.is_ancestry && d.added) {
-        const sp = d.spouse, sp_r = sp.data.rels, _sp_r = sp.data._rels || {};
+        const sp = d.spouse,sp_r = sp.data.rels, _sp_r = sp.data._rels || {};
         if ((areChildren(r) || areChildren(_r)) && (areChildren(sp_r) || areChildren(_sp_r))) {
-          g+=LinkBreakIcon({x:d.sx - d.x + card_dim.w/2 +24.4,y: (d.x !== d.sx ? card_dim.h/2 : card_dim.h)+1, rt: 135, closed}).template;
+          //if(d.data.data.gender=="M" && d.spouse.data.main)g+=LinkBreakIcon({x:d.sx - d.sx + card_dim.w/2 +24.4,y: (d.x !== d.sx ? card_dim.h/2 : card_dim.h)+(sp_sep+(lev_sep/20)), rt: 135, closed}).template;
+          /*else*/ g+=LinkBreakIcon({x:d.sx - d.sx + card_dim.w/2 +24.4,y: (card_dim.h)+1, rt: 135, closed}).template;
         }
       }
       return g
@@ -800,7 +841,7 @@
     }
     
     function CalculateTree$1({datum, data_stash, card_dim, labels}) {
-      const sx = card_dim.w+40, y = card_dim.h+50,
+      sx = card_dim.w+40, y = card_dim.h+50,
         lbls = labels || {};
       datum = datum ? datum : {id: "0", data: {fn: "FN", ln: "LN", gender: "M"}};
       const data = [
@@ -1245,8 +1286,8 @@
     
       function calcTree() {
         return CalculateTree({
-          data_stash: state.data, main_id: state.main_id,
-          node_separation: state.node_separation, level_separation: state.level_separation
+          data_stash: state.data, main_id: state.main_id,is_vertical : state.is_vertical,
+          node_separation: state.node_separation, spouse_separation :state.spouse_separation, level_separation: state.level_separation
         })
       }
     }
