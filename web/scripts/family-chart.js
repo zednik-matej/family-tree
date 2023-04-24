@@ -1,8 +1,6 @@
 // https://donatso.github.io/family-chart/ v0.0.0-beta-1 Copyright 2021 Donat Soric
 
 var card_dim_height = 0;
-var lev_sep = 0;
-var sp_sep = 0;
 var ParentX = [];
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('d3')) :
@@ -309,8 +307,7 @@ var ParentX = [];
     }
     
     function CalculateTree({data_stash, main_id=null, is_vertical=true, node_separation=250, spouse_separation=50, level_separation=150}) {
-      lev_sep = level_separation;
-      sp_sep = spouse_separation;
+      level_separation += spouse_separation;
       data_stash = createRelsToAdd(data_stash);
       sortChildrenWithSpouses(data_stash);
       const main = main_id !== null ? data_stash.find(d => d.id === main_id) : data_stash[0],
@@ -423,7 +420,6 @@ var ParentX = [];
               }
             });
           }
-          /*TO DO this*/
           if (d.parents && d.parents.length === 2) {
             const p1 = d.parents[0],
               p2 = d.parents[1],

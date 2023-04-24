@@ -1,11 +1,10 @@
 function store(data){
-    var test = JSON.stringify(data);
     const store = f3.createStore({
         data: data,
         is_vertical :true,
         node_separation: 250,
-        spouse_separation: 90,
-        level_separation: 170
+        spouse_separation: 80,
+        level_separation: 120
         }),
         view = f3.d3AnimationView({
         store,
