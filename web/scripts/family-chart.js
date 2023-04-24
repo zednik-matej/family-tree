@@ -1,7 +1,9 @@
 // https://donatso.github.io/family-chart/ v0.0.0-beta-1 Copyright 2021 Donat Soric
 
+var card_dim_height = 0;
 var lev_sep = 0;
 var sp_sep = 0;
+var ParentX = [];
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('d3')) :
     typeof define === 'function' && define.amd ? define(['d3'], factory) :
@@ -571,6 +573,7 @@ var sp_sep = 0;
       return links;
     
       function handleAncestrySide({d}) {
+        
         if (!d.parents || d.parents.length === 0) return
         if(d.parents[1]==undefined){
           d.parents[1]=d.parents[0];
@@ -579,15 +582,14 @@ var sp_sep = 0;
           d.parents[0]=d.parents[1];
         }
         const p1 = d.parents[0], p2 = d.parents[1];
-        
         const p = {x: getMid(p1, p2, 'x'), y: p2.y};
     
         links.push({
-          d: Link(d, p),
+          d: LinkParents(d, p),
           _d: () => {
             const _d = {x: d.x, y: d.y},
               _p = {x: d.x, y: d.y};
-            return Link(_d, _p)
+            return LinkParents(_d, _p)
           },
           curve: true, id: linkId(d, d.parents[0], d.parents[1]), depth: d.depth+1, is_ancestry: true
         });
@@ -643,6 +645,18 @@ var sp_sep = 0;
        return d.hasOwnProperty('_'+k) ? d['_'+k] : d[k]
       }
     
+      function LinkParents(d, p) {
+        const hy = (d.y-card_dim_height);
+        return [
+          [d.x, d.y],
+          [d.x, hy],
+          [d.x, hy],
+          [p.x, hy],
+          [p.x, hy],
+          [p.x, p.y],
+        ]
+      }
+
       function Link(d, p) {
         const hy = (d.y + (p.y - d.y) / 2);
         return [
@@ -805,13 +819,27 @@ var sp_sep = 0;
         areParents = r => r.father || r.mother,
         areChildren = r => r.children && r.children.length > 0;
         if (d.sx===undefined) d.sx = d.x; 
-      if ((d.is_ancestry || d.data.main) && (areParents(r) || areParents(_r))) 
-      {g+=LinkBreakIcon({x:card_dim.w/2,y:0, rt: -45, closed}).template;}
+      if ((d.is_ancestry || d.data.main)) 
+      {
+        if(areParents(r))
+        {
+          var parxindex = ParentX.findIndex(x => x.id === d.data.id);
+          if(parxindex>-1){
+            ParentX.splice(parxindex, 1);
+          }
+          ParentX.push({"id": d.data.id,"parentx":(d.sx>d.parents[0].x ? "left":"right")});
+          g+=LinkBreakIcon({x:d.sx>d.parents[0].x ? 0:card_dim.w,y:(card_dim.h/2), rt: -45, closed}).template;
+        }
+        else if(areParents(_r))
+        {
+          var pos = ParentX.find(x => x.id === d.data.id).parentx;
+          g+=LinkBreakIcon({x:(pos=="left" ? 0:card_dim.w),y:(card_dim.h/2), rt: -45, closed}).template;
+        }
+      }
       if (!d.is_ancestry && d.added) {
         const sp = d.spouse,sp_r = sp.data.rels, _sp_r = sp.data._rels || {};
         if ((areChildren(r) || areChildren(_r)) && (areChildren(sp_r) || areChildren(_sp_r))) {
-          //if(d.data.data.gender=="M" && d.spouse.data.main)g+=LinkBreakIcon({x:d.sx - d.sx + card_dim.w/2 +24.4,y: (d.x !== d.sx ? card_dim.h/2 : card_dim.h)+(sp_sep+(lev_sep/20)), rt: 135, closed}).template;
-          /*else*/ g+=LinkBreakIcon({x:d.sx - d.sx + card_dim.w/2 +24.4,y: (card_dim.h)+1, rt: 135, closed}).template;
+          g+=LinkBreakIcon({x:d.sx - d.sx + card_dim.w/2 +24.4,y: (card_dim.h)+1, rt: 135, closed}).template;
         }
       }
       return g
@@ -1031,6 +1059,7 @@ var sp_sep = 0;
         const el = document.createElementNS("http://www.w3.org/2000/svg", 'g'),
           gender_class = d.data.data.gender === 'M' ? 'card-male' : d.data.data.gender === 'F' ? 'card-female' : 'card-genderless',
           card_dim = props.card_dim,
+          card_dim_height=card_dim.h,
           show_mini_tree = !isAllRelativeDisplayed(d, store.state.tree.data),
           unknown_lbl = props.cardEditForm ? 'ADD' : 'UNKNOWN',
     
