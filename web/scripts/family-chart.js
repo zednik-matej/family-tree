@@ -389,9 +389,12 @@ var sp_sep = 0;
           if (!d.is_ancestry && d.data.rels.spouses && d.data.rels.spouses.length > 0){
             const side = -1;
             d.data.rels.spouses.forEach((sp_id, i) => {
-              if(sp_id!=undefined){
+              if(sp_id!=undefined){               
                 const spouse = {data: data_stash.find(d0 => d0.id === sp_id), added: true};
-                spouse.x = d.x-((spouse_separation*3)*(i));
+                if(i==0){
+                  spouse.x = d.x;
+                }
+                else i%2==0 ? spouse.x = d.x-((spouse_separation*3)*(-(i-1))):spouse.x = d.x-((spouse_separation*3)*(i));
                 spouse.y = d.y-(spouse_separation)*side;
                 spouse.sx = d.x;
                 spouse.depth = d.depth;
@@ -617,7 +620,7 @@ var sp_sep = 0;
     
       function handleSpouse({d}) {
         d.data.rels.spouses.forEach(sp_id => {
-          const spouse = tree.find(d0 => d0.data.id === sp_id);
+          const spouse = tree.find(d0 => (d0.data.id === sp_id)&&(d0.spouse!=undefined ? d0.spouse.data.id==d.data.id:true));
           if (!spouse || d.spouse) return
           links.push({
             d: [[d.x, d.y], [spouse.x, spouse.y]],
