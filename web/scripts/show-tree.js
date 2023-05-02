@@ -3,7 +3,7 @@ function store(data){
         data: data,
         is_vertical :true,
         node_separation: 140,
-        spouse_separation: 70,
+        spouse_separation: 50,
         level_separation: 80
         }),
         view = f3.d3AnimationView({

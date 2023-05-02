@@ -617,9 +617,6 @@ var ParentX = [];
     
     
       function handleSpouse({d}) {
-        if (d.data.id == '@I0@'){
-          var t = 1;
-        }
         d.data.rels.spouses.forEach(sp_id => {
           const spouse = tree.find(d0 => (d0.data.id === sp_id)&&(d0.spouse!=undefined ? (d0.spouse.data.id==d.data.id&&d0.spouse):true)&&(d0.sx==d.x||d0.x==d.x));
           if (!spouse || d.spouse) return
@@ -930,7 +927,7 @@ var ParentX = [];
         }
     
         function CardBody({d,w,h}) {
-          const color_class = d.data.data.gender === 'M' ? 'card-male' : d.data.data.gender === 'F' ? 'card-female' : 'card-genderless';
+          const color_class = !d.data.main ?(d.data.data.gender === 'M' ? 'card-male' : d.data.data.gender === 'F' ? 'card-female' : 'card-genderless') : (d.data.data.gender === 'M' ? 'card-male-main' : d.data.data.gender === 'F' ? 'card-female-main' : 'card-genderless-main');
           return {template: (`
             <g>
               <rect width="${w}" height="${h}" fill="#fff" rx="${10}" ${d.data.main ? 'stroke="#000"' : ''} class="${color_class}" />
@@ -1051,7 +1048,7 @@ var ParentX = [];
     
       return function ({node, d}) {
         const el = document.createElementNS("http://www.w3.org/2000/svg", 'g'),
-          gender_class = d.data.data.gender === 'M' ? 'card-male' : d.data.data.gender === 'F' ? 'card-female' : 'card-genderless',
+          gender_class = !d.data.main ?(d.data.data.gender === 'M' ? 'card-male' : d.data.data.gender === 'F' ? 'card-female' : 'card-genderless') : (d.data.data.gender === 'M' ? 'card-male-main' : d.data.data.gender === 'F' ? 'card-female-main' : 'card-genderless-main'),
           card_dim = props.card_dim,
           card_dim_height=card_dim.h,
           show_mini_tree = !isAllRelativeDisplayed(d, store.state.tree.data),
