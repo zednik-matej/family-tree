@@ -318,7 +318,7 @@ var ParentX = [];
       levelOutEachSide(tree_parents, tree_children);
       const tree = mergeSides(tree_parents, tree_children);
       setupChildrenAndParents({tree});
-      setupSpouses({tree, spouse_separation});
+      setupSpouses({tree, spouse_separation, node_separation});
       nodePositioning({tree, is_vertical});
     
       const dim = calculateTreeDim(tree, node_separation, level_separation, is_vertical);
@@ -382,7 +382,7 @@ var ParentX = [];
         });
       }
     
-      function setupSpouses({tree, spouse_separation}) {
+      function setupSpouses({tree, spouse_separation, node_separation}) {
         for (let i = tree.length; i--;) {
           const d = tree[i];
           if (!d.is_ancestry && d.data.rels.spouses && d.data.rels.spouses.length > 0){
@@ -393,7 +393,7 @@ var ParentX = [];
                 if(i==0){
                   spouse.x = d.x;
                 }
-                else i%2==0 ? spouse.x = d.x-((spouse_separation*3)*(-(i-1))):spouse.x = d.x-((spouse_separation*3)*(i));
+                else i%2==0 ? spouse.x = d.x-((node_separation)*(-(i-1))):spouse.x = d.x-((node_separation)*(i));
                 spouse.y = d.y-(spouse_separation)*side;
                 spouse.sx = d.x;
                 spouse.depth = d.depth;
@@ -617,8 +617,11 @@ var ParentX = [];
     
     
       function handleSpouse({d}) {
+        if (d.data.id == '@I0@'){
+          var t = 1;
+        }
         d.data.rels.spouses.forEach(sp_id => {
-          const spouse = tree.find(d0 => (d0.data.id === sp_id)&&(d0.spouse!=undefined ? d0.spouse.data.id==d.data.id:true));
+          const spouse = tree.find(d0 => (d0.data.id === sp_id)&&(d0.spouse!=undefined ? (d0.spouse.data.id==d.data.id&&d0.spouse):true)&&(d0.sx==d.x||d0.x==d.x));
           if (!spouse || d.spouse) return
           links.push({
             d: [[d.x, d.y], [spouse.x, spouse.y]],
@@ -667,11 +670,6 @@ var ParentX = [];
     
       function linkId(...args) {
         return args.map(d => d.data.id).sort().join(", ")  // make unique id
-      }
-    
-      function otherParentFemale(d) {
-        d.sx=d.x;
-        return d;
       }
 
       function otherParent(d, p1, data) {
