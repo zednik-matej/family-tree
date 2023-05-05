@@ -86,23 +86,57 @@ function parsePerson(section){
     var lines = section.split("\r\n");
     var numLines = lines.length; 
     var birt = false;
+    var death = false;
     for (i = 0; i < numLines; i++) {
         var line = lines[i];
         var values = line.split(" ");
         if (values[0] == '0'){
             person["id"] = values[1];
         }
+        if(values[0]== '1' && birt){
+            birt = false;
+        }
         if(values[1]=="BIRT"){
             birt = true;
+            continue;
+        } 
+        if(values[0]== '1' && death){
+            death = false;
+        }
+        if(values[1]=="DEAT"){
+            death = true;
             continue;
         } 
         switch (values[1]){
             case "DATE" :
                 if(birt == true){
-                    persondata["birthday"]= values[2];
+                    persondata["birthday"] = values[2];
                     birthLength=values.length;
                     for(j=3;j<birthLength;j++){
                         persondata["birthday"] += " "+values[j];
+                    }
+                }
+                else if(death == true){
+                    persondata["deathday"] = values[2];
+                    birthLength=values.length;
+                    for(j=3;j<birthLength;j++){
+                        persondata["deathday"] += " "+values[j];
+                    }
+                }
+                break;
+            case "PLAC" :
+                if(birt == true){
+                    persondata["birthplace"] = values[2];
+                    birthLength=values.length;
+                    for(j=3;j<birthLength;j++){
+                        persondata["birthplace"] += " "+values[j];
+                    }
+                }
+                else if(death == true){
+                    persondata["deathplace"] = values[2];
+                    birthLength=values.length;
+                    for(j=3;j<birthLength;j++){
+                        persondata["deathplace"] += " "+values[j];
                     }
                 }
                 break;
@@ -119,30 +153,29 @@ function parsePerson(section){
             case "SEX" :
                 persondata["gender"] = values[2];
                 break;
-            /*case "FAMS" :
-                if(personrels["FAMS"]==undefined){
-                    personrels["FAMS"]=values[2];
-                }
-                else personrels["FAMS"]+=" "+values[2];
-                break;
-            case "FAMC" :
-                if(personrels["FAMC"]==undefined){
-                    personrels["FAMC"]=values[2]
-                }
-                else personrels["FAMC"]+=" "+values[2];
-                break;*/
         }
-        birt = false;
     }
     person["data"] = persondata;
     person["rels"] = personrels;
     return person;
 }
 
+function GetLinesEnd(source) {
+    var temp = source.indexOf('\n');
+    if(temp == -1){
+        return '\r';
+    }
+    else if (source[temp - 1] === '\r'){
+        return '\r\n';
+    }
+    return '\n';
+}
+
 
 function parseGedcom(gedcom={}){
     var myText = gedcom; // Input text
-    var lines = myText.split("\r\n");
+    splitter = GetLinesEnd(myText);
+    var lines = myText.split(splitter);
     var numLines = lines.length;
     var i;
     var section;
@@ -159,7 +192,6 @@ function parseGedcom(gedcom={}){
                 persons.push(parsePerson(section));
             }
             if(check == "FAM"){
-                var fam = null;
                 parseFamily(section, persons);
             }
             section = "";

@@ -681,7 +681,8 @@ var ParentX = [];
           <g transform="translate(${card_dim.text_x}, ${card_dim.text_y})">
             <text clip-path="url(#card_text_clip)">
               <tspan x="${0}" dy="${14}">${card_display[0](d.data)}</tspan>
-              <tspan x="${0}" dy="${14}" font-size="10">${card_display[1](d.data)}</tspan>
+              <tspan x="${0}" dy="${14}" font-size="12">${card_display[1](d.data)}</tspan>
+              <tspan x="${0}" dy="${14}" font-size="12">${card_display[2](d.data)}</tspan>
             </text>
             <rect width="${card_dim.w-card_dim.text_x-10}" height="${card_dim.h-20}" style="mask: url(#fade)" class="text-overflow-mask" /> 
           </g>
@@ -818,13 +819,27 @@ var ParentX = [];
           if(parxindex>-1){
             ParentX.splice(parxindex, 1);
           }
-          ParentX.push({"id": d.data.id,"parentx":(d.sx>d.parents[0].x ? "left":"right")});
-          g+=LinkBreakIcon({x:d.sx>d.parents[0].x ? 0:card_dim.w,y:(card_dim.h/2), rt: -45, closed}).template;
+          if (d.parents.length<2){
+            ParentX.push({"id": d.data.id,"parentx" : "up"});
+            g+=LinkBreakIcon({x:d.sx<d.parents[0].x ? card_dim.w:card_dim.w/2,y:d.sx<d.parents[0].x ?(card_dim.h/2):0, rt: -45, closed}).template;
+          }
+          else {
+            ParentX.push({"id": d.data.id,"parentx":(d.sx>d.parents[0].x ? "left":"right")});
+            g+=LinkBreakIcon({x:d.sx>d.parents[0].x ? 0:card_dim.w,y:(card_dim.h/2), rt: -45, closed}).template;
+          }
         }
         else if(areParents(_r))
         {
           var pos = ParentX.find(x => x.id === d.data.id).parentx;
-          g+=LinkBreakIcon({x:(pos=="left" ? 0:card_dim.w),y:(card_dim.h/2), rt: -45, closed}).template;
+          var final_x = 0;
+          var final_y = (card_dim.h/2);
+          if (pos == "up") 
+          {
+            final_x = card_dim.w/2;
+            final_y = 0;
+          }
+          else if(pos == "right") final_x = card_dim.w;
+          g+=LinkBreakIcon({x:final_x,y:final_y, rt: -45, closed}).template;
         }
       }
       if (!d.is_ancestry && d.added) {
@@ -1153,7 +1168,6 @@ var ParentX = [];
     function d3AnimationView({store, cont, Card: Card$1}) {
       const svg = createSvg();
       setupSvg(svg, store.state.zoom_polite);
-    
       return {update: updateView, svg, setCard: card => Card$1 = card}
     
       function updateView(props) {
@@ -1263,7 +1277,7 @@ var ParentX = [];
       function createSvg() {
         const svg_dim = cont.getBoundingClientRect(),
           svg_html = (`
-            <svg class="main_svg">
+            <svg class="main_svg" id = "PNG_target">
               <rect width="${svg_dim.width}" height="${svg_dim.height}" fill="transparent" />
               <g class="view">
                 <g class="links_view"></g>
