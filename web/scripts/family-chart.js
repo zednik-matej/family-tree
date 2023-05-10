@@ -683,8 +683,9 @@ var ParentX = [];
               <tspan x="${0}" dy="${14}">${card_display[0](d.data)}</tspan>
               <tspan x="${0}" dy="${14}" font-size="12">${card_display[1](d.data)}</tspan>
               <tspan x="${0}" dy="${14}" font-size="12">${card_display[2](d.data)}</tspan>
+              <tspan x="${0}" dy="${14}" font-size="12">${card_display[3](d.data)}</tspan>
             </text>
-            <rect width="${card_dim.w-card_dim.text_x-10}" height="${card_dim.h-20}" style="mask: url(#fade)" class="text-overflow-mask" /> 
+             
           </g>
         </g>
       `)
