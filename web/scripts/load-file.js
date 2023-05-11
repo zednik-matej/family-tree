@@ -44,11 +44,24 @@ function loadNeo4jData(){
   SendHTTP('POST', 'http://perun.fit.vutbr.cz:7474/db/neo4j/tx/commit', {
     "statements": [
       {
-        "statement" : "MATCH (probant {id: '3208'})-[re:JE_OTEC*1..]->(person: Osoba) RETURN person, re[0]"
+        "statement" : "MATCH p=(probant {id: $props.id})<-[re:JE_OTEC|JE_MATKA*1..]-(person: Osoba) return p",
+        "parameters" :{
+          "props" :{
+            "id" : "3479"
+          }
+        }
+    },
+    {
+      "statement" : "MATCH p=(probant {id: $props.id})-[re:JE_OTEC|JE_MATKA*1..]->(person: Osoba) return p",
+        "parameters" :{
+          "props" :{
+            "id" : "3479"
+          }
+        }
     }
     ]
   }, 'xzedni15', 'guvejfe6ur').then(responseData=>{
-      console.log(responseData.results[0]);
+      console.log(responseData);
     }).catch(err=>{
       console.log(err);
     });
