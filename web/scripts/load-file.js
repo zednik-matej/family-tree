@@ -41,13 +41,14 @@ function SendHTTP(method, url, data, username, password){
 }
 
 function loadNeo4jData(){
+  person_id = '3479';
   SendHTTP('POST', 'http://perun.fit.vutbr.cz:7474/db/neo4j/tx/commit', {
     "statements": [
       {
         "statement" : "MATCH p=(probant {id: $props.id})<-[re:JE_OTEC|JE_MATKA*1..]-(person: Osoba) return p",
         "parameters" :{
           "props" :{
-            "id" : "3479"
+            "id" : person_id
           }
         }
     },
@@ -55,13 +56,14 @@ function loadNeo4jData(){
       "statement" : "MATCH p=(probant {id: $props.id})-[re:JE_OTEC|JE_MATKA*1..]->(person: Osoba) return p",
         "parameters" :{
           "props" :{
-            "id" : "3479"
+            "id" : person_id
           }
         }
     }
     ]
-  }, 'xzedni15', 'guvejfe6ur').then(responseData=>{
-      console.log(responseData);
+  }, 'xzedni15', 'guvejfe6ur').then(responseData=>{    
+      var data = parseNeo4j(responseData.results, person_id);
+      store(data);
     }).catch(err=>{
       console.log(err);
     });
