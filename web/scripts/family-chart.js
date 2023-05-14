@@ -684,6 +684,7 @@ var ParentX = [];
               <tspan x="${0}" dy="${14}" font-size="12">${card_display[1](d.data)}</tspan>
               <tspan x="${0}" dy="${14}" font-size="12">${card_display[2](d.data)}</tspan>
               <tspan x="${0}" dy="${14}" font-size="12">${card_display[3](d.data)}</tspan>
+              <tspan x="${0}" dy="${14}" font-size="12">${card_display[4](d.data)}</tspan>
             </text>
              
           </g>
