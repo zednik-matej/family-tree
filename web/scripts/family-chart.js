@@ -42,7 +42,6 @@ var ParentX = [];
             b_p2 = otherParent(b_d, datum, data) || {},
             a_i = datum.rels.spouses.indexOf(a_p2.id),
             b_i = datum.rels.spouses.indexOf(b_p2.id);
-    
           if (datum.data.gender === "M") return a_i - b_i
           else return b_i - a_i
         });
@@ -50,8 +49,8 @@ var ParentX = [];
     }
     
     function otherParent(d, p1, data) {
-      /*if (p1.gender==="F") return data.find(d0 => (d0.id === p1.id));
-      else*/ return data.find(d0 => (d0.id !== p1.id) && ((d0.id === d.rels.mother) || (d0.id === d.rels.father)));
+      data.find(d0 => (d0.id !== p1.id) && ((d0.id === d.rels.mother) || (d0.id === d.rels.father)));
+      
     }
     
     function calculateEnterAndExitPositions(d, entering, exiting) {
@@ -594,7 +593,7 @@ var ParentX = [];
     
       function handleProgenySide({d}) {
         if (!d.children || d.children.length === 0) return
-    
+        
         d.children.forEach((child, i) => {
           var other_parent = otherParent(child, d, tree);
           if(other_parent==undefined)other_parent=d;
@@ -670,7 +669,32 @@ var ParentX = [];
       }
 
       function otherParent(d, p1, data) {
-        return data.find(d0 => (d0.data.id !== p1.data.id) && ((d0.data.id === d.data.rels.mother) || (d0.data.id === d.data.rels.father)))
+        var arr = data.filter(d0 => (d0.data.id !== p1.data.id) && ((d0.data.id === d.data.rels.mother) || (d0.data.id === d.data.rels.father)));
+        var old_x=d.psx!=undefined ? d.psx : d.x;
+
+        if(arr.length>1){
+          var old_xc,new_x;
+          old_x=undefined;
+          for(i=0;i<arr.length;i++){
+            new_x = arr[i].x;
+            var vypocet = d.x-new_x;
+            if(vypocet<0)vypocet*=-1;
+            if(old_xc==undefined)
+            {
+              old_xc=vypocet;
+              old_x=new_x;
+            }
+            if(vypocet<old_xc){
+              old_xc=vypocet;
+              old_x=new_x;
+            }
+            
+          }
+        }
+        else if(arr.length==1){
+          old_x = arr[0].x;
+        }
+        return data.find(d0 => (d0.data.id !== p1.data.id) && ((d0.data.id === d.data.rels.mother) || (d0.data.id === d.data.rels.father))&&(d0.x==old_x));
       }
     }
     

@@ -3,7 +3,7 @@ var Persons = Array();
 
 function setPerson(persondata){
     var person = {};
-
+    person["all data"]=persondata;
     if(persondata["datum_narodení"][0]!=undefined){
         person["birthday"] = persondata["datum_narodení"][0];
     }
@@ -48,7 +48,8 @@ function parseParents(parents=Array()){
         Data.row.forEach(parseRows);
         function parseRows(Rows){
             var lastperson;
-            Rows.forEach(parseItems);
+            if(Array.isArray(Rows))Rows.forEach(parseItems);
+            else parseItems(Rows,0,0);
             function parseItems(item,index,arr){
                 var person;
                 if(index==0||index%2==0){
@@ -59,6 +60,7 @@ function parseParents(parents=Array()){
                         person.id = item.id;
                         person.rels = {};
                         person.rels.children = [];
+                        person.rels.spouses = [];
                     }
                     else{
                         person = Persons[personIndex];
@@ -66,7 +68,7 @@ function parseParents(parents=Array()){
                     if(lastperson!=undefined){
                         if(item.pohlaví[0]=="M")Persons[Persons.findIndex(person=>person.id === lastperson)].rels.father=item.id;
                         else if(item.pohlaví[0]=="F")Persons[Persons.findIndex(person=>person.id === lastperson)].rels.mother=item.id;
-                        if(!person.rels.children.includes(lastperson))person.rels.children.push(lastperson);
+                        if(!person.rels.children.includes(lastperson))person.rels.children.unshift(lastperson);
                     }
                     if(personIndex<0)Persons.push(person);
                     lastperson = item.id;
@@ -83,7 +85,8 @@ function parseChildren(children=Array()){
         Data.row.forEach(parseRows);
         function parseRows(Rows){
             var lastperson;
-            Rows.forEach(parseItems);
+            if(Array.isArray(Rows))Rows.forEach(parseItems);
+            else parseItems(Rows,0,0);
             function parseItems(item,index,arr){
                 var person;
                 if(index==0||index%2==0){
@@ -94,40 +97,103 @@ function parseChildren(children=Array()){
                         person.id = item.id;
                         person.rels = {};
                         person.rels.children = [];
+                        person.rels.spouses = [];
                     }
                     else{
                         person = Persons[personIndex];
                     }
                     if(lastperson!=undefined){
-                        /*
-                        if(item.pohlaví[0]=="M")Persons[Persons.findIndex(person=>person.id === lastperson)].rels.father=item.id;
-                        else if(item.pohlaví[0]=="F")Persons[Persons.findIndex(person=>person.id === lastperson)].rels.mother=item.id;
-                        if(!person.rels.children.includes(lastperson))person.rels.children.push(lastperson);
-                        */
                         if(lastperson.gender=="M"&&person.rels.father==undefined)person.rels.father= lastperson.id;
                         if(lastperson.gender=="F"&&person.rels.mother==undefined)person.rels.mother= lastperson.id;
                         if(!Persons[Persons.findIndex(person=>person.id === lastperson.id)].rels.children.includes(item.id))
                         {
-                            Persons[Persons.findIndex(person=>person.id === lastperson.id)].rels.children.push(item.id);
+                            Persons[Persons.findIndex(person=>person.id === lastperson.id)].rels.children.unshift(item.id);
                         }
                     }
                     if(personIndex<0)Persons.push(person);
                     lastperson = {};
                     lastperson.id = item.id;
                     lastperson.gender = item["pohlaví"][0];
-                } 
+                }
             }
         }
       } 
       return Persons;
 }
 
+function LoadPerson(item,personindex){
+    if(personindex<0){
+        person = {};
+        person.data=setPerson(item);
+        person.id = item.id;
+        person.rels = {};
+        person.rels.children = [];
+        person.rels.spouses = [];
+    }
+    else{
+        person = Persons[personindex];
+    }
+    return person;
+}
+
+function ParseOtherParents(OtherPar=Array()){
+    OtherPar.forEach(parseData);
+    function parseData(Data) {    
+        var personindex, motherindex;
+        var person, mother;
+        if(Data.row[0]){
+            personindex = Persons.findIndex(per=>per.id === Data.row[0].id);
+            person = LoadPerson(Data.row[0],personindex);
+        }
+        if(Data.row[1])
+        {
+            motherindex = Persons.findIndex(per=>per.id === Data.row[1].id);
+            mother = LoadPerson(Data.row[1],motherindex);
+        }
+        if(mother!=undefined){
+            if(mother.data.gender=="F")
+            {
+                person.rels.mother = mother.id;
+            }
+            if(mother.data.gender=="M")
+            {
+                person.rels.father = mother.id;
+            }
+            if(!mother.rels.children.includes(person.id))mother.rels.children.unshift(person.id);
+            if(personindex<0)Persons.push(person);
+            if(motherindex<0)Persons.push(mother);
+        }
+    
+      } 
+      return Persons;
+}
+
+function RepairSpouses(){
+    for(i=0;i<Persons.length;i++){
+        person = Persons[i];
+        if(person.rels.father!=undefined){
+            fatherindex = Persons.findIndex(per=>per.id === person.rels.father);
+            motherindex = Persons.findIndex(per=>per.id === person.rels.mother);
+            if(fatherindex>-1&&motherindex>-1){
+                father = Persons[fatherindex];
+                mother = Persons[motherindex];
+                if(!mother.rels.spouses.includes(father.id))mother.rels.spouses.push(father.id);
+                if(!father.rels.spouses.includes(mother.id))father.rels.spouses.push(mother.id);
+            }
+        }
+    }
+}
+
 function parseNeo4j(results=Array(), probant_id){
     Persons = [];
     prob_id =  probant_id;
-    var parents,children;
+    var parents,children,OtherPar;
     if(results[0]) parents = results[0].data;
     if(results[1]) children = results[1].data;
-    var par=parseParents(parents).concat(parseChildren(children));
-    return par;
+    if(results[2]) OtherPar = results[2].data;
+    parseParents(parents);
+    parseChildren(children);
+    ParseOtherParents(OtherPar);
+    RepairSpouses();
+    return Persons;
 }

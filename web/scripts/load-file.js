@@ -41,7 +41,7 @@ function SendHTTP(method, url, data, username, password){
 }
 
 function loadNeo4jData(){
-  person_id = '3479';
+  person_id = '3207';
   SendHTTP('POST', 'http://perun.fit.vutbr.cz:7474/db/neo4j/tx/commit', {
     "statements": [
       {
@@ -54,6 +54,14 @@ function loadNeo4jData(){
     },
     {
       "statement" : "MATCH p=(probant {id: $props.id})-[re:JE_OTEC|JE_MATKA*1..]->(person: Osoba) return p",
+        "parameters" :{
+          "props" :{
+            "id" : person_id
+          }
+        }
+    },
+    {
+      "statement" : "MATCH p=(probant:Osoba)-[re:JE_OTEC|JE_MATKA*1..]->(child:Osoba)<-[re2:JE_OTEC|JE_MATKA]-(parents: Osoba) where probant.id = $props.id return child,parents",
         "parameters" :{
           "props" :{
             "id" : person_id
