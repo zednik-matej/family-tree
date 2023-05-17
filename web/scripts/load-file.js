@@ -1,3 +1,11 @@
+/*
+    author : Matej Zednik
+    year : 2023
+    file : load-file.js
+    project : Family Tree Drawing in Web Pages
+*/
+
+
 function readSingleFile(e) {
     var file = e.target.files[0];
     if (!file) {

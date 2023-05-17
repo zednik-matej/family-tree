@@ -1,3 +1,10 @@
+/*
+    author : Matej Zednik
+    year : 2023
+    file : parse-neo4j.js
+    project : Family Tree Drawing in Web Pages
+*/
+
 var prob_id;
 var Persons = Array();
 

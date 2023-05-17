@@ -1,3 +1,10 @@
+/*
+    author : Matej Zednik
+    year : 2023
+    file : parse-gedcom.js
+    project : Family Tree Drawing in Web Pages
+*/
+
 function GetPersonIndex (personArray = Array(), Tag){
     return personArray.findIndex(function(element){
         return (element["id"]==Tag);

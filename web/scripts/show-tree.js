@@ -1,3 +1,12 @@
+/*
+    author : Matej Zednik
+    year : 2023
+    inspired in example usage from: https://github.com/donatso/family-chart
+    family-chart.css is edited and original source is : https://github.com/donatso/family-chart
+    file : parse-gedcom.js
+    project : Family Tree Drawing in Web Pages
+*/
+
 function store(data){
     const store = f3.createStore({
         data: data,

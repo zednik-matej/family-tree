@@ -1,4 +1,10 @@
 // https://donatso.github.io/family-chart/ v0.0.0-beta-1 Copyright 2021 Donat Soric
+/*
+  author : Donat Soric (2021)
+  edited by : Matej Zednik (2023)
+  file : family-chart.js
+  project : Family Tree Drawing in Web Pages
+*/
 
 var card_dim_height = 0;
 var ParentX = [];
