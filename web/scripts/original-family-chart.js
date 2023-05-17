@@ -1,13 +1,11 @@
 // https://donatso.github.io/family-chart/ v0.0.0-beta-1 Copyright 2021 Donat Soric
+
 /*
-  author : Donat Soric (2021)
-  edited by : Matej Zednik (2023)
-  file : family-chart.js
-  project : Family Tree Drawing in Web Pages
+    Original non edited version of family-chart library
+    author : Donat Soric (2021)
+    file : original-family-chart.js
 */
 
-var card_dim_height = 0;
-var ParentX = [];
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('d3')) :
     typeof define === 'function' && define.amd ? define(['d3'], factory) :
@@ -48,6 +46,7 @@ var ParentX = [];
             b_p2 = otherParent(b_d, datum, data) || {},
             a_i = datum.rels.spouses.indexOf(a_p2.id),
             b_i = datum.rels.spouses.indexOf(b_p2.id);
+    
           if (datum.data.gender === "M") return a_i - b_i
           else return b_i - a_i
         });
@@ -55,8 +54,7 @@ var ParentX = [];
     }
     
     function otherParent(d, p1, data) {
-      data.find(d0 => (d0.id !== p1.id) && ((d0.id === d.rels.mother) || (d0.id === d.rels.father)));
-      
+      return data.find(d0 => (d0.id !== p1.id) && ((d0.id === d.rels.mother) || (d0.id === d.rels.father)))
     }
     
     function calculateEnterAndExitPositions(d, entering, exiting) {
@@ -311,8 +309,7 @@ var ParentX = [];
       handleRelsOfNewDatum({datum, data_stash, rel_type, rel_datum});
     }
     
-    function CalculateTree({data_stash, main_id=null, is_vertical=true, node_separation=250, spouse_separation=50, level_separation=150}) {
-      level_separation += spouse_separation;
+    function CalculateTree({data_stash, main_id=null, is_vertical=true, node_separation=250, level_separation=150}) {
       data_stash = createRelsToAdd(data_stash);
       sortChildrenWithSpouses(data_stash);
       const main = main_id !== null ? data_stash.find(d => d.id === main_id) : data_stash[0],
@@ -323,7 +320,7 @@ var ParentX = [];
       levelOutEachSide(tree_parents, tree_children);
       const tree = mergeSides(tree_parents, tree_children);
       setupChildrenAndParents({tree});
-      setupSpouses({tree, spouse_separation, node_separation});
+      setupSpouses({tree, node_separation});
       nodePositioning({tree, is_vertical});
     
       const dim = calculateTreeDim(tree, node_separation, level_separation, is_vertical);
@@ -356,8 +353,7 @@ var ParentX = [];
         }
     
         function hierarchyGetterParents(d) {
-          /*You can change position of mother and father*/ 
-          return [ d.rels.father, d.rels.mother]
+          return [d.rels.father, d.rels.mother]
             .filter(d => d).map(id => data_stash.find(d => d.id === id))
         }
     
@@ -387,52 +383,38 @@ var ParentX = [];
         });
       }
     
-      function setupSpouses({tree, spouse_separation, node_separation}) {
+      function setupSpouses({tree, node_separation}) {
         for (let i = tree.length; i--;) {
           const d = tree[i];
           if (!d.is_ancestry && d.data.rels.spouses && d.data.rels.spouses.length > 0){
-            const side = -1;
+            const side = d.data.data.gender === "M" ? -1 : 1;  // female on right
+            d.x += d.data.rels.spouses.length/2*node_separation*side;
             d.data.rels.spouses.forEach((sp_id, i) => {
-              if(sp_id!=undefined){               
-                const spouse = {data: data_stash.find(d0 => d0.id === sp_id), added: true};
-                if(i==0){
-                  spouse.x = d.x;
-                }
-                else i%2==0 ? spouse.x = d.x-((node_separation)*(-(i-1))):spouse.x = d.x-((node_separation)*(i));
-                spouse.y = d.y-(spouse_separation)*side;
-                spouse.sx = d.x;
-                spouse.depth = d.depth;
-                spouse.spouse = d;
-                if (!d.spouses) d.spouses = [];
-                d.spouses.push(spouse);
-                tree.push(spouse);             
-                  tree.forEach(d0 => (
-                    (d0.data.rels.father === d.data.id && d0.data.rels.mother === spouse.data.id) ||
-                    (d0.data.rels.mother === d.data.id && d0.data.rels.father === spouse.data.id)
-                    ) ? d0.psx = d.x : null
-                  );
-              }
-              else {               
-                tree.forEach(d0 => {
-                  if(d0.data==undefined)
-                  {
-                    return;
-                  }
-                  if ((d0.data.rels.father === d.data.id && d0.data.rels.mother === undefined) ||
-                  (d0.data.rels.mother === d.data.id && d0.data.rels.father === undefined))
-                   d0.psx = d.x;}
-                );
-              }
+              const spouse = {data: data_stash.find(d0 => d0.id === sp_id), added: true};
+    
+              spouse.x = d.x-(node_separation*(i+1))*side;
+              spouse.y = d.y;
+              spouse.sx = i > 0 ? spouse.x : spouse.x + (node_separation/2)*side;
+              spouse.depth = d.depth;
+              spouse.spouse = d;
+              if (!d.spouses) d.spouses = [];
+              d.spouses.push(spouse);
+              tree.push(spouse);
+    
+              tree.forEach(d0 => (
+                (d0.data.rels.father === d.data.id && d0.data.rels.mother === spouse.data.id) ||
+                (d0.data.rels.mother === d.data.id && d0.data.rels.father === spouse.data.id)
+                ) ? d0.psx = spouse.sx : null
+              );
             });
           }
           if (d.parents && d.parents.length === 2) {
             const p1 = d.parents[0],
               p2 = d.parents[1],
-              midd = p1.y - (p1.y - p2.y)/2,
-              y = (d,sp) => midd + (spouse_separation/2)*(d.y < sp.y ? 1 : -1);
+              midd = p1.x - (p1.x - p2.x)/2,
+              x = (d,sp) => midd + (node_separation/2)*(d.x < sp.x ? 1 : -1);
     
-            p2.y = y(p1, p2); p1.y = y(p2, p1);
-            p2.x = p1.x;
+            p2.x = x(p1, p2); p1.x = x(p2, p1);
           }
         }
       }
@@ -476,12 +458,12 @@ var ParentX = [];
               const child = data.find(d1 => d1.id === d0);
               if (child.rels[is_father ? 'father' : 'mother'] !== d.id) return
               if (child.rels[!is_father ? 'father' : 'mother']) return
-              if (spouse) {
-                //spouse = createToAddSpouse(d);
-                //d.rels.spouses.push(spouse.id);
-              
+              if (!spouse) {
+                spouse = createToAddSpouse(d);
+                d.rels.spouses.push(spouse.id);
+              }
               spouse.rels.children.push(child.id);
-              child.rels[!is_father ? 'father' : 'mother'] = spouse.id;}
+              child.rels[!is_father ? 'father' : 'mother'] = spouse.id;
             });
           }
         }
@@ -574,23 +556,17 @@ var ParentX = [];
       return links;
     
       function handleAncestrySide({d}) {
-        
         if (!d.parents || d.parents.length === 0) return
-        if(d.parents[1]==undefined){
-          d.parents[1]=d.parents[0];
-        }
-        if(d.parents[0]==undefined){
-          d.parents[0]=d.parents[1];
-        }
         const p1 = d.parents[0], p2 = d.parents[1];
-        const p = {x: getMid(p1, p2, 'x'), y: p2.y};
+    
+        const p = {x: getMid(p1, p2, 'x'), y: getMid(p1, p2, 'y')};
     
         links.push({
-          d: LinkParents(d, p),
+          d: Link(d, p),
           _d: () => {
             const _d = {x: d.x, y: d.y},
               _p = {x: d.x, y: d.y};
-            return LinkParents(_d, _p)
+            return Link(_d, _p)
           },
           curve: true, id: linkId(d, d.parents[0], d.parents[1]), depth: d.depth+1, is_ancestry: true
         });
@@ -599,22 +575,14 @@ var ParentX = [];
     
       function handleProgenySide({d}) {
         if (!d.children || d.children.length === 0) return
-        
+    
         d.children.forEach((child, i) => {
-          var other_parent = otherParent(child, d, tree);
-          if(other_parent==undefined)other_parent=d;
-          var sx = other_parent.x;
-          var sy;
-          if(other_parent.y<d.y){          
-            sy = d.y;
-          }
-          else {
-            sy = other_parent.y;
-          }
-          
+          const other_parent = otherParent(child, d, tree),
+            sx = other_parent.sx;
+    
           links.push({
-            d: Link(child, {x: sx, y: sy}),
-            _d: () => Link({x: sx, y: sy}, {x: _or(child, 'x'), y: _or(child, 'y')}),
+            d: Link(child, {x: sx, y: d.y}),
+            _d: () => Link({x: sx, y: d.y}, {x: _or(child, 'x'), y: _or(child, 'y')}),
             curve: true, id: linkId(child, d, other_parent), depth: d.depth+1
           });
         });
@@ -623,7 +591,7 @@ var ParentX = [];
     
       function handleSpouse({d}) {
         d.data.rels.spouses.forEach(sp_id => {
-          const spouse = tree.find(d0 => (d0.data.id === sp_id)&&(d0.spouse!=undefined ? (d0.spouse.data.id==d.data.id&&d0.spouse):true)&&(d0.sx==d.x||d0.x==d.x));
+          const spouse = tree.find(d0 => d0.data.id === sp_id);
           if (!spouse || d.spouse) return
           links.push({
             d: [[d.x, d.y], [spouse.x, spouse.y]],
@@ -639,25 +607,13 @@ var ParentX = [];
       ///
       function getMid(d1, d2, side, is_) {
         if (is_) return _or(d1, side) - (_or(d1, side) - _or(d2, side))/2
-        else return d1[side]
+        else return d1[side] - (d1[side] - d2[side])/2
       }
     
       function _or(d, k) {
        return d.hasOwnProperty('_'+k) ? d['_'+k] : d[k]
       }
     
-      function LinkParents(d, p) {
-        const hy = (d.y-card_dim_height);
-        return [
-          [d.x, d.y],
-          [d.x, hy],
-          [d.x, hy],
-          [p.x, hy],
-          [p.x, hy],
-          [p.x, p.y],
-        ]
-      }
-
       function Link(d, p) {
         const hy = (d.y + (p.y - d.y) / 2);
         return [
@@ -673,34 +629,9 @@ var ParentX = [];
       function linkId(...args) {
         return args.map(d => d.data.id).sort().join(", ")  // make unique id
       }
-
+    
       function otherParent(d, p1, data) {
-        var arr = data.filter(d0 => (d0.data.id !== p1.data.id) && ((d0.data.id === d.data.rels.mother) || (d0.data.id === d.data.rels.father)));
-        var old_x=d.psx!=undefined ? d.psx : d.x;
-
-        if(arr.length>1){
-          var old_xc,new_x;
-          old_x=undefined;
-          for(i=0;i<arr.length;i++){
-            new_x = arr[i].x;
-            var vypocet = d.x-new_x;
-            if(vypocet<0)vypocet*=-1;
-            if(old_xc==undefined)
-            {
-              old_xc=vypocet;
-              old_x=new_x;
-            }
-            if(vypocet<old_xc){
-              old_xc=vypocet;
-              old_x=new_x;
-            }
-            
-          }
-        }
-        else if(arr.length==1){
-          old_x = arr[0].x;
-        }
-        return data.find(d0 => (d0.data.id !== p1.data.id) && ((d0.data.id === d.data.rels.mother) || (d0.data.id === d.data.rels.father))&&(d0.x==old_x));
+        return data.find(d0 => (d0.data.id !== p1.data.id) && ((d0.data.id === d.data.rels.mother) || (d0.data.id === d.data.rels.father)))
       }
     }
     
@@ -711,12 +642,9 @@ var ParentX = [];
           <g transform="translate(${card_dim.text_x}, ${card_dim.text_y})">
             <text clip-path="url(#card_text_clip)">
               <tspan x="${0}" dy="${14}">${card_display[0](d.data)}</tspan>
-              <tspan x="${0}" dy="${14}" font-size="12">${card_display[1](d.data)}</tspan>
-              <tspan x="${0}" dy="${14}" font-size="12">${card_display[2](d.data)}</tspan>
-              <tspan x="${0}" dy="${14}" font-size="12">${card_display[3](d.data)}</tspan>
-              <tspan x="${0}" dy="${14}" font-size="12">${card_display[4](d.data)}</tspan>
+              <tspan x="${0}" dy="${14}" font-size="10">${card_display[1](d.data)}</tspan>
             </text>
-             
+            <rect width="${card_dim.w-card_dim.text_x-10}" height="${card_dim.h-20}" style="mask: url(#fade)" class="text-overflow-mask" /> 
           </g>
         </g>
       `)
@@ -842,42 +770,11 @@ var ParentX = [];
         closed = d.data.hide_rels,
         areParents = r => r.father || r.mother,
         areChildren = r => r.children && r.children.length > 0;
-        if (d.sx===undefined) d.sx = d.x; 
-      if ((d.is_ancestry || d.data.main)) 
-      {
-        if(areParents(r))
-        {
-          var parxindex = ParentX.findIndex(x => x.id === d.data.id);
-          if(parxindex>-1){
-            ParentX.splice(parxindex, 1);
-          }
-          if (d.parents.length<2){
-            ParentX.push({"id": d.data.id,"parentx" : "up"});
-            g+=LinkBreakIcon({x:d.sx<d.parents[0].x ? card_dim.w:card_dim.w/2,y:d.sx<d.parents[0].x ?(card_dim.h/2):0, rt: -45, closed}).template;
-          }
-          else {
-            ParentX.push({"id": d.data.id,"parentx":(d.sx>d.parents[0].x ? "left":"right")});
-            g+=LinkBreakIcon({x:d.sx>d.parents[0].x ? 0:card_dim.w,y:(card_dim.h/2), rt: -45, closed}).template;
-          }
-        }
-        else if(areParents(_r))
-        {
-          var pos = ParentX.find(x => x.id === d.data.id).parentx;
-          var final_x = 0;
-          var final_y = (card_dim.h/2);
-          if (pos == "up") 
-          {
-            final_x = card_dim.w/2;
-            final_y = 0;
-          }
-          else if(pos == "right") final_x = card_dim.w;
-          g+=LinkBreakIcon({x:final_x,y:final_y, rt: -45, closed}).template;
-        }
-      }
+      if ((d.is_ancestry || d.data.main) && (areParents(r) || areParents(_r))) {g+=LinkBreakIcon({x:card_dim.w/2,y:0, rt: -45, closed}).template;}
       if (!d.is_ancestry && d.added) {
-        const sp = d.spouse,sp_r = sp.data.rels, _sp_r = sp.data._rels || {};
+        const sp = d.spouse, sp_r = sp.data.rels, _sp_r = sp.data._rels || {};
         if ((areChildren(r) || areChildren(_r)) && (areChildren(sp_r) || areChildren(_sp_r))) {
-          g+=LinkBreakIcon({x:d.sx - d.sx + card_dim.w/2 +24.4,y: (card_dim.h)+1, rt: 135, closed}).template;
+          g+=LinkBreakIcon({x:d.sx - d.x + card_dim.w/2 +24.4,y: (d.x !== d.sx ? card_dim.h/2 : card_dim.h)+1, rt: 135, closed}).template;
         }
       }
       return g
@@ -910,7 +807,7 @@ var ParentX = [];
     }
     
     function CalculateTree$1({datum, data_stash, card_dim, labels}) {
-      sx = card_dim.w+40, y = card_dim.h+50,
+      const sx = card_dim.w+40, y = card_dim.h+50,
         lbls = labels || {};
       datum = datum ? datum : {id: "0", data: {fn: "FN", ln: "LN", gender: "M"}};
       const data = [
@@ -974,7 +871,7 @@ var ParentX = [];
         }
     
         function CardBody({d,w,h}) {
-          const color_class = !d.data.main ?(d.data.data.gender === 'M' ? 'card-male' : d.data.data.gender === 'F' ? 'card-female' : 'card-genderless') : (d.data.data.gender === 'M' ? 'card-male-main' : d.data.data.gender === 'F' ? 'card-female-main' : 'card-genderless-main');
+          const color_class = d.data.data.gender === 'M' ? 'card-male' : d.data.data.gender === 'F' ? 'card-female' : 'card-genderless';
           return {template: (`
             <g>
               <rect width="${w}" height="${h}" fill="#fff" rx="${10}" ${d.data.main ? 'stroke="#000"' : ''} class="${color_class}" />
@@ -1095,9 +992,8 @@ var ParentX = [];
     
       return function ({node, d}) {
         const el = document.createElementNS("http://www.w3.org/2000/svg", 'g'),
-          gender_class = !d.data.main ?(d.data.data.gender === 'M' ? 'card-male' : d.data.data.gender === 'F' ? 'card-female' : 'card-genderless') : (d.data.data.gender === 'M' ? 'card-male-main' : d.data.data.gender === 'F' ? 'card-female-main' : 'card-genderless-main'),
+          gender_class = d.data.data.gender === 'M' ? 'card-male' : d.data.data.gender === 'F' ? 'card-female' : 'card-genderless',
           card_dim = props.card_dim,
-          card_dim_height=card_dim.h,
           show_mini_tree = !isAllRelativeDisplayed(d, store.state.tree.data),
           unknown_lbl = props.cardEditForm ? 'ADD' : 'UNKNOWN',
     
@@ -1200,6 +1096,7 @@ var ParentX = [];
     function d3AnimationView({store, cont, Card: Card$1}) {
       const svg = createSvg();
       setupSvg(svg, store.state.zoom_polite);
+    
       return {update: updateView, svg, setCard: card => Card$1 = card}
     
       function updateView(props) {
@@ -1309,7 +1206,7 @@ var ParentX = [];
       function createSvg() {
         const svg_dim = cont.getBoundingClientRect(),
           svg_html = (`
-            <svg class="main_svg" id = "PNG_target">
+            <svg class="main_svg">
               <rect width="${svg_dim.width}" height="${svg_dim.height}" fill="transparent" />
               <g class="view">
                 <g class="links_view"></g>
@@ -1355,8 +1252,8 @@ var ParentX = [];
     
       function calcTree() {
         return CalculateTree({
-          data_stash: state.data, main_id: state.main_id,is_vertical : state.is_vertical,
-          node_separation: state.node_separation, spouse_separation :state.spouse_separation, level_separation: state.level_separation
+          data_stash: state.data, main_id: state.main_id,
+          node_separation: state.node_separation, level_separation: state.level_separation
         })
       }
     }

@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="shortcut icon" type="image/x-icon" href="/files/favicon_io/favicon.ico">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>Family tree viewer</title>
@@ -9,6 +8,7 @@
     <script src="scripts/family-chart.js"></script>
     <script src="scripts/show-tree.js"></script>
     <script src="scripts/parse-gedcom.js"></script>
+    <script src="scripts/parse-neo4j.js"></script>
     <link rel="stylesheet" href="styles/family-chart.css">
     <link rel="stylesheet" href="styles/gedcom.css">
 </head>
@@ -17,6 +17,7 @@
     <div class="file-load">
         <input type="file" id="file-input"/>
         <pre id="file-load"></pre>
+        <button id="PostBtn">Post request</button>
         <script src="scripts/load-file.js"></script>
     </div>
     <div id="FamilyChart" class="f3"></div>

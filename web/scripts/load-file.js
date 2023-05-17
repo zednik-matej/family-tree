@@ -1,3 +1,11 @@
+/*
+    author : Matej Zednik
+    year : 2023
+    file : load-file.js
+    project : Family Tree Drawing in Web Pages
+*/
+
+
 function readSingleFile(e) {
     var file = e.target.files[0];
     if (!file) {
@@ -15,5 +23,71 @@ function readSingleFile(e) {
     reader.readAsText(file);
   }
 
+function SendHTTP(method, url, data, username, password){
+  const promise = new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, url);
+    xhr.responseType = 'json';
+    if(data)xhr.setRequestHeader('Content-Type', 'application/json');
+    if(username&&password)xhr.setRequestHeader("Authorization", "Basic " + btoa(username+':'+password));
+    xhr.onload = () => {
+      if(xhr.status>=400){
+        reject(xhr.response);
+      }
+      else {
+        resolve(xhr.response);
+      }
+    };
+
+    xhr.onerror = () => {
+      reject('Error');
+    }
+
+    xhr.send(JSON.stringify(data));
+  })
+  return promise;
+}
+
+function loadNeo4jData(){
+  person_id = '3207';
+  SendHTTP('POST', 'http://perun.fit.vutbr.cz:7474/db/neo4j/tx/commit', {
+    "statements": [
+      {
+        "statement" : "MATCH p=(probant {id: $props.id})<-[re:JE_OTEC|JE_MATKA*1..]-(person: Osoba) return p",
+        "parameters" :{
+          "props" :{
+            "id" : person_id
+          }
+        }
+    },
+    {
+      "statement" : "MATCH p=(probant {id: $props.id})-[re:JE_OTEC|JE_MATKA*1..]->(person: Osoba) return p",
+        "parameters" :{
+          "props" :{
+            "id" : person_id
+          }
+        }
+    },
+    {
+      "statement" : "MATCH p=(probant:Osoba)-[re:JE_OTEC|JE_MATKA*1..]->(child:Osoba)<-[re2:JE_OTEC|JE_MATKA]-(parents: Osoba) where probant.id = $props.id return child,parents",
+        "parameters" :{
+          "props" :{
+            "id" : person_id
+          }
+        }
+    }
+    ]
+  }, 'xzedni15', 'guvejfe6ur').then(responseData=>{    
+      var data = parseNeo4j(responseData.results, person_id);
+      store(data);
+    }).catch(err=>{
+      console.log(err);
+    });
+}
+
 document.getElementById('file-input')
     .addEventListener('change', readSingleFile, false);
+
+
+document.getElementById('PostBtn')
+    .addEventListener('click', loadNeo4jData, false);
